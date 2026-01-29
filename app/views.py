@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from . import serializers, models
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import (AllowAny, IsAuthenticated, IsAdminUser)
 
 from rest_framework.response import Response
 from rest_framework.status import (
@@ -9,7 +9,7 @@ from rest_framework.status import (
     HTTP_404_NOT_FOUND,
     HTTP_201_CREATED,
     HTTP_400_BAD_REQUEST,
-    
+    HTTP_401_UNAUTHORIZED
     )
 
 # Create your views here.
@@ -112,6 +112,17 @@ def makeUsers(request):
         else:
             return Response(serializer.errors, HTTP_400_BAD_REQUEST)
 
+@api_view(['Post'])
+@permission_classes([IsAuthenticated])
+def isAdmin(request):
+    if request.user.is_staff:
+        return Response({"admin": True}, HTTP_200_OK)
+    else:
+        return Response({"admin": False}, HTTP_401_UNAUTHORIZED) 
+
+
+def indexView(request):
+    return render('/api/whatever')
 # ----------------------------------------------------------
 # ----------------------------------------------------------
 # ----------------------------------------------------------
@@ -129,7 +140,7 @@ def makeUsers(request):
 def getItems(request):
     queryset = models.Inventory.objects.all().order_by("partnum")
     serializer = serializers.UserSerializer(queryset, many = True)
-    return Response(data = serializer.data, status = HTTP_200_OK)
+    return Response(serializer.data, HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -139,11 +150,12 @@ def getItem(request, pk):
         serializer = serializers.InventorySerializer(queryset, many = False).data
         return Response(data=serializer, status = HTTP_200_OK)
     except models.Inventory.DoesNotExist:
-        return Response(data = {"data": "not found"}, status = HTTP_404_NOT_FOUND)
+        return Response({"data": "not found"}, HTTP_404_NOT_FOUND)
 
 
 @api_view(['PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def changeItem(request, pk):
     try:
         
@@ -175,10 +187,11 @@ def changeItem(request, pk):
 # list of Inventory
 @api_view(['PATCH', 'POST'])
 @permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def makeItems(request):
     
     if request.method == 'PATCH':
-        # [{id: 1, keys: values}, {id: 2, keys: values}
+        # [{id: 1, keys: values}, {id: 2, keys: values}]
         if not isinstance(request.data, list):
             return Response({"error": "Expected a list of items"}, status=HTTP_400_BAD_REQUEST)
 
@@ -218,8 +231,10 @@ def makeItems(request):
 @permission_classes([IsAuthenticated])
 @permission_classes([IsAdminUser])
 def destroyInventory(request):
+    # [{id: 1, keys: values}, {id: 2, keys: values}
+
     if not isinstance(request.data, list):
-            return Response({"error": "Expected a list of items"}, status=HTTP_400_BAD_REQUEST)
+        return Response({"error": "Expected a list of items"}, HTTP_400_BAD_REQUEST)
 
     data = request.data 
 
@@ -237,22 +252,9 @@ def destroyInventory(request):
 
         serializer = serializers.InventorySerializer(queryset, data=item, partial=True)
         
-        if serializer.is_valid():
-            serializer.save()
-            updated_data.append(serializer.data)
-        else:
-            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST, exception=True)
-        if len(bad_data) != 0:
-            return Response({"bad data": bad_data}.update({"good data": updated_data}))
-        return Response({"good data": updated_data}, status=HTTP_200_OK)
+        updated_data.append(serializer.data)        
+        queryset.delete()
+        return Response({"deleted data": updated_data}, status=HTTP_200_OK)
 
-@api_view(['Post'])
-@permission_classes([IsAuthenticated])
-def isAdmin(request):
-    if request.user.is_staff:
-        return Response({"admin": True}, HTTP_200_OK)
-    else:
-        return Response({"admin": "False"}, HTTP_400_BAD_REQUEST) 
-def indexView(request):
-    return render('/api/whatever')
+
 

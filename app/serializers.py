@@ -9,4 +9,5 @@ class InventorySerializer(serializers.HyperlinkedModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        
+        exclude = ('is_superuser', 'is_staff', 'password')

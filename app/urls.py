@@ -8,20 +8,29 @@ from rest_framework_simplejwt.views import (
 from .views import *
 
 urlpatterns = [
-    # get JWT tokens
-    path('api/token/authorize', TokenObtainPairView.as_view()),
-    path('api/token/refresh', TokenRefreshView.as_view()),
-    path('api/token/verify', TokenVerifyView.as_view()),
+    # get JWT tokens POST
+    path('token/authorize', TokenObtainPairView.as_view()),
+    path('token/refresh', TokenRefreshView.as_view()),
+    path('token/verify', TokenVerifyView.as_view()),
+    path('token/isadmin', isAdmin),
 
     # change and make take isAdmin
-    path('api/getusers', getUsers),
-    path('api/getuser/<int:pk>', getUser),
-    path('api/changeuser/<int:pk>', changeUser),
-    path('api/makeusers', makeUsers),
+    path('getusers', getUsers),
+    path('getuser/<int:pk>', getUser),
+    # PATCH, DELETE
+    path('changeuser/<int:pk>', changeUser),
+    # PATCH, POST
+    path('makeusers', makeUsers),
 
-    path('api/getinventory', getItems),
-    path('api/getuser/<int:pk>', getItem),
-    path('api/changeuser/<int:pk>', changeItem),
-    path('api/makeusers', makeItems),
+    # GET
+    path('getinventory', getItems),
+    path('getitem/<int:pk>', getItem),
+    # PATCH, DELETE
+    path('changeitem/<int:pk>', changeItem),
+    # PATCH, POST
+    path('makeitems', makeItems),
+    # DELETE
+    path('destroyinventory', destroyInventory),
+
     path('', indexView),
 ]
