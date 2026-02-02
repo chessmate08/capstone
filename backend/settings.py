@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from os import getenv
 from django.core.management.utils import get_random_secret_key
+import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,16 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_random_secret_key()
+SECRET_KEY = getenv('DJANGO_SECRET_KEY', get_random_secret_key())
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = True
+DEBUG = getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    # react 'capstone' domain
-]
+ALLOWED_HOSTS = getenv("ALLOWED_HOSTS", '127.0.0.1').split(',')
+CORS_ALLOWED_ORIGINS = getenv("CORS_ALLOWED_ORIGINS", 'http://localhost:5173')
 
 # Application definition
 
@@ -42,8 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
-    'rest_framework_simplejwt'
-    ,'app'
+    'rest_framework_simplejwt',
+    'bneApp'
 ]
 
 MIDDLEWARE = [
@@ -98,10 +97,10 @@ SIMPLE_JWT = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f'postgresql://{getenv('POSTGRES_USER')}:@{getenv('DATABASE_HOST', 'localhost')}:{getenv('DATABASE_PORT', '5432')}/{getenv('DATABASE_NAME')}',
+        
+    )
 }
 
 

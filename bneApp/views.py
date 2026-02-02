@@ -73,7 +73,7 @@ def makeUsers(request):
     if request.method == "PUT":
         Response({"No": "THIS DELETES ENTIRE TABLE"}, HTTP_400_BAD_REQUEST)
     elif request.method == 'PATCH':
-        # [{id: 1, keys: values}, {id: 2, keys: values}
+        # [{id: 1, keys: values}, {id: 2, keys: values}]
         if not isinstance(request.data, list):
             return Response({"error": "Expected a list of items"}, status=HTTP_400_BAD_REQUEST)
 
@@ -82,18 +82,13 @@ def makeUsers(request):
         updated_data = []
         for item in mutable_data:
             try:
-                # Safely get the id. If it's missing, you might want to handle it.
                 user_id = item.get("id")
                 if not user_id:
-                    # Handle error if ID is missing in an item
                     continue 
                     
                 queryset = models.User.objects.get(id=user_id)
             except models.User.DoesNotExist:
-                # Handle case where user with specific ID is not found
-                continue # Or return an error response for the entire request
-
-            # Pass the individual item data for the specific user instance
+                continue
             serializer = serializers.UserSerializer(queryset, data=item, partial=True)
             
             if serializer.is_valid():
@@ -127,7 +122,7 @@ def indexView(request):
 # ----------------------------------------------------------
 # ----------------------------------------------------------
 # ----------------------------------------------------------
-# ----------------------------------------------------------
+# ----------------------------------------------------------F
 # ----------------------------------------------------------
 # ----------------------------------------------------------
 # ----------------------------------------------------------
@@ -139,8 +134,15 @@ def indexView(request):
 @permission_classes([AllowAny])
 def getItems(request):
     queryset = models.Inventory.objects.all().order_by("partnum")
-    serializer = serializers.UserSerializer(queryset, many = True)
-    return Response(serializer.data, HTTP_200_OK)
+    serializer = serializers.InventorySerializer(queryset, many = True)
+    data = serializer.data.copy()
+    if (request.user and request.user.is_staff):
+        return Response(data, HTTP_200_OK)
+    else:
+        for i in data:
+            i.pop('id')
+            
+    return Response(data, HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -148,6 +150,9 @@ def getItem(request, pk):
     try:
         queryset = models.Inventory.objects.get(id = pk)
         serializer = serializers.InventorySerializer(queryset, many = False).data
+        if (request.user == None or (request.user and request.user.is_staff)):
+            serializer.remove('id')
+        
         return Response(data=serializer, status = HTTP_200_OK)
     except models.Inventory.DoesNotExist:
         return Response({"data": "not found"}, HTTP_404_NOT_FOUND)
@@ -231,7 +236,7 @@ def makeItems(request):
 @permission_classes([IsAuthenticated])
 @permission_classes([IsAdminUser])
 def destroyInventory(request):
-    # [{id: 1, keys: values}, {id: 2, keys: values}
+    # [{id: 1, keys: values}, {id: 2, keys: values}]
 
     if not isinstance(request.data, list):
         return Response({"error": "Expected a list of items"}, HTTP_400_BAD_REQUEST)
@@ -246,15 +251,19 @@ def destroyInventory(request):
             if not itemId:
                 continue 
                 
-            queryset = models.Inventory.objects.get(id=itemId)
+            queryset = models.Inventory.objects.get(id=itemId).delete()
+            
         except models.Inventory.DoesNotExist:
+            bad_data.append(item)
             continue 
 
         serializer = serializers.InventorySerializer(queryset, data=item, partial=True)
         
         updated_data.append(serializer.data)        
         queryset.delete()
-        return Response({"deleted data": updated_data}, status=HTTP_200_OK)
+    if bad_data:
+        return Response({"deleted data": updated_data, 'bad data': bad_data}, HTTP_400_BAD_REQUEST)
+    return Response({"deleted data": updated_data}, status=HTTP_200_OK)
 
 
 
