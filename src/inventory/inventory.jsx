@@ -22,7 +22,7 @@ function Items() {
     useEffect(() => {
         const fetcher = async () => {
             
-            const domain = import.meta.env.VITE_domain;
+            const domain = window.CONFIG.API_URL || import.meta.env.VITE_domain;
             if (token) {
                 var data = await fetch(`${domain}/api/getinventory`, {
                     method: 'GET',
