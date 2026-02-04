@@ -1,0 +1,17 @@
+.contain {
+    width: 100%;
+    overflow: auto;
+    display: flex;
+    justify-content: space-between;
+}
+.p {
+    margin: 2% 3%
+
+}
+.h2 {
+    text-align: center;
+}
+.flexed {
+    width: 50%;
+    
+}

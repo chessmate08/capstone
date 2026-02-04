@@ -1,0 +1,101 @@
+body {
+    background-color: #e9e7da;
+    padding: 3% 3%;
+    color: #3c3c3c
+}
+
+.top {
+    display:flex;
+    justify-content: space-between;
+}
+.top p {
+    line-height: 1%;
+}
+ a:hover {
+    color: rgb(92, 25, 154);
+    text-decoration: underline;
+}
+a {
+    text-decoration: none;
+    color: #CC671F;
+}
+.headInfo {
+    color: black;
+    padding: 10px;
+}
+.headInfo a {
+    font-weight: bold;
+}
+
+.headInfo p {
+    margin-left: 0px;
+    line-height: 1em;
+}
+.nav {
+    margin-top: 5%;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    height:50px;
+    font-weight: bold;
+}
+
+.hl {
+    border: .05px solid black;
+    margin: 0px;
+}
+
+
+
+div {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+.footer p {
+    text-align: center;
+}
+
+/* inventory tables */
+table {
+    width: 90%;
+    table-layout: fixed;
+}
+table, th, td {
+    border: 2px solid black;
+    border-collapse:collapse
+}
+th, td {
+    padding: 0.75% 2%;
+    overflow-wrap: anywhere;
+}
+th {
+    background-color: #636b46;
+    color: white;
+}
+tr:nth-child(even) {
+    background-color: #a7b3a5;
+    
+}
+input {
+    border-radius: 5px;
+    border: none;
+    padding: 2.5% 5%;
+    color:#CC671F;
+}
+input:hover, input:focus {
+    background-color: #e9e7da;
+}
+input:autofill {
+    background-color: #a7b3a5;
+}
+#next, #previous{
+    font-size: 34px;
+    color:#CC671F;
+    background-color: #e9e7da;
+    border: none;
+}
+#next:hover, #previous:hover {
+    color: rgb(92, 25, 154)
+}
+/* inventory tables */
