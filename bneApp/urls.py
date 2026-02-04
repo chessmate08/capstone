@@ -31,6 +31,4 @@ urlpatterns = [
     path('makeitems', makeItems),
     # DELETE
     path('destroyinventory', destroyInventory),
-
-    path('', indexView),
 ]

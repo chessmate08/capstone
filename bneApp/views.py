@@ -150,8 +150,8 @@ def getItem(request, pk):
     try:
         queryset = models.Inventory.objects.get(id = pk)
         serializer = serializers.InventorySerializer(queryset, many = False).data
-        if (request.user == None or (request.user and request.user.is_staff)):
-            serializer.remove('id')
+        if (request.user == None or request.user.is_staff):
+            serializer.pop('id')
         
         return Response(data=serializer, status = HTTP_200_OK)
     except models.Inventory.DoesNotExist:
