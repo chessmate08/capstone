@@ -13,6 +13,17 @@ from rest_framework.status import (
     )
 
 # Create your views here.
+
+# react view
+
+from django.conf import settings
+
+def index(request):
+    return render(request, 'index.html', {
+        'API_URL': settings.REACT_APP_API_URL 
+    })
+
+
 # GET requests for users
 @api_view(['GET'])
 @permission_classes([AllowAny])

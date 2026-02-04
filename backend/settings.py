@@ -12,12 +12,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-
+from dotenv import load_dotenv
 from django.core.management.utils import get_random_secret_key
 import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -28,8 +29,10 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', get_random_secret_key())
 
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", 'http://localhost:5173,http://127.0.0.1:8000,http://localhost:8000').split(',')
+
 
 # Application definition
 
@@ -63,7 +66,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend/dist')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,10 +92,13 @@ REST_FRAMEWORK = {
         
     ),
 }
+
+REACT_API_URL = os.getenv('API_URL', 'http://localhost:8000')
+
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=20),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -100,7 +106,7 @@ SIMPLE_JWT = {
 DATABASES = {
     'default': dj_database_url.config(
         # default=f'postgresql://{os.getenv('POSTGRES_USER', 'postgres'}:{os.getenv('', '')}@{os.getenv('DATABASE_HOST', 'localhost')}:{os.getenv('DATABASE_PORT', '5432')}/{os.getenv('DATABASE_NAME', 'inventory')}',
-        default='postgresql://postgres:Minecraft-08@localhost:5432/inventory'
+        default=os.getenv("DATABASE_STRING",'postgresql://postgres:Minecraft-08@localhost:5432/inventory')
     )
 }
 
@@ -139,9 +145,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/assets/'
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    os.path.join(BASE_DIR, 'frontend/dist/assets'),
 ]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
