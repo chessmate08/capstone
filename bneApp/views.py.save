@@ -2,7 +2,8 @@ from django.shortcuts import render
 from . import serializers, models
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import (AllowAny, IsAuthenticated, IsAdminUser)
-
+from django.db.utils import IntegrityError
+from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
@@ -39,25 +40,34 @@ def getUser(request, pk):
 @permission_classes([IsAdminUser])
 def changeUser(request, pk):
     try:
+        
         queryset = models.User.objects.get(id = pk)
+        
         if request.method == 'PATCH':
-           serializer = serializers.UserSerializer(queryset, data = request.data , partial = True)
-           if serializer.is_valid():
-              serializer.save()
-              return Response(serializer.data, HTTP_200_OK)
+            serializer = serializers.UserSerializer(queryset, data = request.data , partial = True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, HTTP_200_OK)
+        
         elif request.method == 'DELETE':
             try:
-                models.User.objects.get(id = pk).delete() 
+                models.User.objects.get(id = pk).delete()
+                
             except models.User.DoesNotExist():
                 Response({"ID does not exist": "User not found"})
+
+            
 
         data = serializers.UserSerializer(queryset, many = False).data
         return Response(data=data, status = HTTP_200_OK)
     except models.User.DoesNotExist():
         return Response({"data": "not found"}, HTTP_404_NOT_FOUND)
+    
+
+    
+
 # list of users
 @api_view(['PUT', 'PATCH', 'POST'])
-@permission_classes([AllowAny])
 @permission_classes([IsAuthenticated])
 @permission_classes([IsAdminUser])
 def makeUsers(request):
@@ -70,7 +80,7 @@ def makeUsers(request):
             return Response({"error": "Expected a list of items"}, status=HTTP_400_BAD_REQUEST)
 
         mutable_data = request.data 
-        bad_data = []
+
         updated_data = []
         for item in mutable_data:
             try:
@@ -87,21 +97,21 @@ def makeUsers(request):
                 serializer.save()
                 updated_data.append(serializer.data)
             else:
-                bad_data.append(item)
-        if len(updated_data)>0:
-            return Response({updated_data:updated_data, bad_data:bad_data}, status=HTTP_201_CREATED)
-        else:
-            return Response({bad_data:bad_data}, HTTP_400_BAD_REQUEST)
+                # Return a 400 error immediately if any single item is invalid
+                return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+            return Response(updated_data, status=HTTP_200_OK)
     elif request.method == 'POST':
         serializer = serializers.UserSerializer(data = request.data, many = True)
         if serializer.is_valid():
-            for i in serializer.data:
-                while True:
-                    try:
-                        models.User.objects.create(first_name=i.get('first_name', 'first'), last_name=i.get('last_name'), email=i.get('email', 's@gmail.com'), username=i.get('username'), password=i.get("password"))
-                        break
-                    except IntegrityError:
-                        continue
+	    for i in serializer.data:
+
+  	       while True:
+	          try:
+	   	     serializer.save()
+		     break
+ 	          except IntegrityError:
+		continue
             Response(serializer.data, HTTP_201_CREATED)
         else:
             return Response(serializer.errors, HTTP_400_BAD_REQUEST)
@@ -116,12 +126,12 @@ def isAdmin(request):
 
 
 def indexView(request):
-    return render(request, '/api/whatever')
+    return render('/api/whatever')
 # ----------------------------------------------------------
 # ----------------------------------------------------------
 # ----------------------------------------------------------
 # ----------------------------------------------------------
-# ----------------------------------------------------------
+# ----------------------------------------------------------F
 # ----------------------------------------------------------
 # ----------------------------------------------------------
 # ----------------------------------------------------------
@@ -140,6 +150,7 @@ def getItems(request):
     else:
         for i in data:
             i.pop('id')
+            
     return Response(data, HTTP_200_OK)
 
 @api_view(['GET'])
@@ -150,6 +161,7 @@ def getItem(request, pk):
         serializer = serializers.InventorySerializer(queryset, many = False).data
         if (request.user == None or request.user.is_staff):
             serializer.pop('id')
+        
         return Response(data=serializer, status = HTTP_200_OK)
     except models.Inventory.DoesNotExist:
         return Response({"data": "not found"}, HTTP_404_NOT_FOUND)
@@ -160,36 +172,44 @@ def getItem(request, pk):
 @permission_classes([IsAdminUser])
 def changeItem(request, pk):
     try:
-
+        
         queryset = models.Inventory.objects.get(id = pk)
-
+        
         if request.method == 'PATCH':
             serializer = serializers.InventorySerializer(queryset, data = request.data , partial = True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, HTTP_200_OK)
+        
         elif request.method == 'DELETE':
             try:
                 models.Inventory.objects.get(id = pk).delete()
+                
             except models.Inventory.DoesNotExist():
                 Response({"ID does not exist": "Item not found"})
+
+            
+
         data = serializers.InventorySerializer(queryset, many = False).data
         return Response(data=data, status = HTTP_200_OK)
     except models.Inventory.DoesNotExist():
         return Response({"data": "not found"}, HTTP_404_NOT_FOUND)
+    
+
+    
 
 # list of Inventory
 @api_view(['PATCH', 'POST'])
 @permission_classes([IsAuthenticated])
 @permission_classes([IsAdminUser])
 def makeItems(request):
-
+    
     if request.method == 'PATCH':
         # [{id: 1, keys: values}, {id: 2, keys: values}]
         if not isinstance(request.data, list):
             return Response({"error": "Expected a list of items"}, status=HTTP_400_BAD_REQUEST)
 
-        data = request.data
+        data = request.data 
 
         updated_data = []
         bad_data = []
@@ -197,12 +217,14 @@ def makeItems(request):
             try:
                 itemId = item.get("id")
                 if not itemId:
-                    continue
+                    continue 
+                    
                 queryset = models.Inventory.objects.get(id=itemId)
             except models.Inventory.DoesNotExist:
-                continue
+                continue 
 
             serializer = serializers.InventorySerializer(queryset, data=item, partial=True)
+            
             if serializer.is_valid():
                 serializer.save()
                 updated_data.append(serializer.data)
@@ -214,19 +236,8 @@ def makeItems(request):
     elif request.method == 'POST':
         serializer = serializers.InventorySerializer(data = request.data, many = True)
         if serializer.is_valid():
-            for i in serializer.data:
-                while (True):
-                    try:
-                        if (models.Inventory.objects.filter(partnum=i.get("partnum")).exists()):
-                            raise ValidationError("partnumber must be unique: this one exists in the inventory")
-                        models.Inventory.objects.create(partnum=i.get('partnum'), quantity=i.get('quantity', 0), shelf_location=i.get('shelf_location', 'null'), description=i.get('description', None))
-                        break
-                    except IntegrityError:
-                        continue
-                    except ValidationError:
-                        return Response({'error': ValidationError.message, data:serializer.data}, HTTP_400_BAD_REQUEST)
-
-            return Response(serializer.data, HTTP_201_CREATED)
+            serializer.save()
+            Response(serializer.data, HTTP_201_CREATED)
         else:
             return Response(serializer.errors, HTTP_400_BAD_REQUEST)
 
@@ -239,7 +250,7 @@ def destroyInventory(request):
     if not isinstance(request.data, list):
         return Response({"error": "Expected a list of items"}, HTTP_400_BAD_REQUEST)
 
-    data = request.data
+    data = request.data 
 
     updated_data = []
     bad_data = []
@@ -247,19 +258,21 @@ def destroyInventory(request):
         try:
             itemId = item.get("id")
             if not itemId:
-                continue
+                continue 
+                
             queryset = models.Inventory.objects.get(id=itemId).delete()
+            
         except models.Inventory.DoesNotExist:
             bad_data.append(item)
-            continue
+            continue 
 
         serializer = serializers.InventorySerializer(queryset, data=item, partial=True)
-        if (serializer.is_valid()):
-            updated_data.append(serializer.data)
+        
+        updated_data.append(serializer.data)        
         queryset.delete()
-    if len(updated_data)==0:
+    if bad_data:
         return Response({"deleted data": updated_data, 'bad data': bad_data}, HTTP_400_BAD_REQUEST)
-    return Response({"deleted data": updated_data, "bad data":bad_data}, status=HTTP_200_OK)
+    return Response({"deleted data": updated_data}, status=HTTP_200_OK)
 
 
 
