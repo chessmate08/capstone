@@ -102,7 +102,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-REACT_API_URL = os.getenv('API_URL', 'http://localhost:8000')
+REACT_API_URL = os.getenv('API_URL', 'https://brandnewelec.com')
 
 from datetime import timedelta
 SIMPLE_JWT = {

@@ -12,16 +12,7 @@ from rest_framework.status import (
     HTTP_401_UNAUTHORIZED
     )
 
-# Create your views here.
-
-# react view
-
-from django.conf import settings
-
-def index(request):
-    return render(request, 'index.html', {
-        'API_URL': settings.REACT_APP_API_URL 
-    })
+# Create your views here
 
 
 # GET requests for users
