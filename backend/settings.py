@@ -29,7 +29,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', get_random_secret_key())
 
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['54.80.54.211','brandnewelec.com', 'www.brandnewelec.com']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '54.80.54.211').split(',')
 
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", 'http://localhost:5173,http://127.0.0.1:8000,http://localhost:8000').split(',')
 
@@ -81,6 +81,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
+SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
