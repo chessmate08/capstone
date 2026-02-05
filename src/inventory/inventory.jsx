@@ -158,7 +158,7 @@ function Items() {
     useEffect(() => {
         if (token != null) {
             const checkAdmin = async () => {
-                const domain = import.meta.env.VITE_domain;
+                const domain = window.CONFIG.API_URL || import.meta.env.VITE_domain;
                 await fetch(`${domain}/api/token/isadmin`, {
                     method: 'POST',
                     headers: {

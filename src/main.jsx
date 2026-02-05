@@ -21,7 +21,7 @@ const Head = () => {
                 <a href="mailto: sales@brandnewelec.com">sales@brandnewelec.com</a>
                 <br />
             </div>
-            <img src={img} alt="Brand New Electric Phoenix" style={{"aspectRatio":"1", width: '241px'}} />
+            <img src={img} alt="Brand New Electric Phoenix" style={{"aspectRatio":"1", width: '210px'}} />
         </div>
         <div className="nav">
             <Link to='/'>HOME</Link>

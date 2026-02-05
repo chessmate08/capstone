@@ -6,7 +6,7 @@ import * as inv from './inventory.module.css'
 function Form({Head, Foot}) {
     const {login} = useAuth();
     const navigate = useNavigate();
-    const domain = import.meta.env.VITE_domain
+    const domain = window.CONFIG.API_URL || import.meta.env.VITE_domain
     async function Authorize(e) {
         
         e.preventDefault()
