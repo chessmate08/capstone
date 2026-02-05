@@ -74,7 +74,6 @@ def changeUser(request, pk):
 
 # list of users
 @api_view(['PUT', 'PATCH', 'POST'])
-@permission_classes([AllowAny])
 @permission_classes([IsAuthenticated])
 @permission_classes([IsAdminUser])
 def makeUsers(request):
@@ -87,7 +86,7 @@ def makeUsers(request):
             return Response({"error": "Expected a list of items"}, status=HTTP_400_BAD_REQUEST)
 
         mutable_data = request.data 
-
+        bad_data = []
         updated_data = []
         for item in mutable_data:
             try:
@@ -104,19 +103,21 @@ def makeUsers(request):
                 serializer.save()
                 updated_data.append(serializer.data)
             else:
-                # Return a 400 error immediately if any single item is invalid
-                return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
-
-            return Response(updated_data, status=HTTP_200_OK)
+                bad_data.append(item)
+        if len(updated_data)>0:
+            return Response({updated_data:updated_data, bad_data:bad_data}, status=HTTP_201_CREATED)
+        else:
+            return Response({bad_data:bad_data}, HTTP_400_BAD_REQUEST)
     elif request.method == 'POST':
         serializer = serializers.UserSerializer(data = request.data, many = True)
         if serializer.is_valid():
-            while True:
-                try:
-                    serializer.save()
-                    break
-                except IntegrityError:
-                    continue
+            for i in serializer.data:
+                while True:
+                    try:
+                        models.User.objects.create(first_name=i.get('first_name', 'first'), last_name=i.get('last_name'), email=i.get('email', 's@gmail.com'), username=i.get('username'), password=i.get("password"))
+                        break
+                    except IntegrityError:
+                        continue
             Response(serializer.data, HTTP_201_CREATED)
         else:
             return Response(serializer.errors, HTTP_400_BAD_REQUEST)
@@ -240,8 +241,7 @@ def makeItems(request):
             return Response({"good data": updated_data}, status=HTTP_200_OK)
     elif request.method == 'POST':
         serializer = serializers.InventorySerializer(data = request.data, many = True)
-        
-        keys = []
+                
         if serializer.is_valid():
             for i in serializer.data:
                 while (True):
@@ -267,7 +267,7 @@ def destroyInventory(request):
     # [{id: 1, keys: values}, {id: 2, keys: values}]
 
     if not isinstance(request.data, list):
-        return Response({"error": "Expected a list of items"}, HTTP_400_BAD_REQUEST)
+        return Response({"error": "Expected a list of objects => [{id:num}]"}, HTTP_400_BAD_REQUEST)
 
     data = request.data 
 
@@ -295,6 +295,5 @@ def destroyInventory(request):
     if bad_data:
         return Response({"deleted data": updated_data, 'bad data': bad_data}, HTTP_400_BAD_REQUEST)
     return Response({"deleted data": updated_data}, status=HTTP_200_OK)
-
 
 
