@@ -2,7 +2,8 @@ from django.shortcuts import render
 from . import serializers, models
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import (AllowAny, IsAuthenticated, IsAdminUser)
-
+from django.db.utils import IntegrityError
+from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
@@ -16,12 +17,9 @@ from rest_framework.status import (
 
 # react view
 
-from django.conf import settings
 
-def index(request):
-    return render(request, 'index.html', {
-        'API_URL': settings.REACT_APP_API_URL 
-    })
+
+
 
 
 # GET requests for users
@@ -68,7 +66,7 @@ def changeUser(request, pk):
 
         data = serializers.UserSerializer(queryset, many = False).data
         return Response(data=data, status = HTTP_200_OK)
-    except models.User.DoesNotExist():
+    except models.User.DoesNotExist:
         return Response({"data": "not found"}, HTTP_404_NOT_FOUND)
     
 
@@ -113,7 +111,12 @@ def makeUsers(request):
     elif request.method == 'POST':
         serializer = serializers.UserSerializer(data = request.data, many = True)
         if serializer.is_valid():
-            serializer.save()
+            while True:
+                try:
+                    serializer.save()
+                    break
+                except IntegrityError:
+                    continue
             Response(serializer.data, HTTP_201_CREATED)
         else:
             return Response(serializer.errors, HTTP_400_BAD_REQUEST)
@@ -187,18 +190,18 @@ def changeItem(request, pk):
             try:
                 models.Inventory.objects.get(id = pk).delete()
                 
-            except models.Inventory.DoesNotExist():
+            except models.Inventory.DoesNotExist:
                 Response({"ID does not exist": "Item not found"})
 
             
 
         data = serializers.InventorySerializer(queryset, many = False).data
         return Response(data=data, status = HTTP_200_OK)
-    except models.Inventory.DoesNotExist():
+    except models.Inventory.DoesNotExist:
         return Response({"data": "not found"}, HTTP_404_NOT_FOUND)
     
 
-    
+
 
 # list of Inventory
 @api_view(['PATCH', 'POST'])
@@ -237,9 +240,23 @@ def makeItems(request):
             return Response({"good data": updated_data}, status=HTTP_200_OK)
     elif request.method == 'POST':
         serializer = serializers.InventorySerializer(data = request.data, many = True)
+        
+        keys = []
         if serializer.is_valid():
-            serializer.save()
-            Response(serializer.data, HTTP_201_CREATED)
+            for i in serializer.data:
+                while (True):
+                    try:
+                        if (models.Inventory.objects.filter(partnum=i.get("partnum")).exists()):
+                            raise ValidationError("partnumber must be unique: this one exists in the inventory")
+                        models.Inventory.objects.create(partnum=i.get('partnum'), quantity=i.get('quantity', 0), shelf_location=i.get('shelf_location', 'null'), description=i.get('description', None))
+                        break
+                    except IntegrityError:
+                        continue
+                    except ValidationError:
+                        return Response({'error': ValidationError.message, data:serializer.data}, HTTP_400_BAD_REQUEST)
+                        
+                    
+            return Response(serializer.data, HTTP_201_CREATED)
         else:
             return Response(serializer.errors, HTTP_400_BAD_REQUEST)
 
@@ -258,19 +275,22 @@ def destroyInventory(request):
     bad_data = []
     for item in data:
         try:
-            itemId = item.get("id")
+            itemId = item.get("id", None) or item.get('partnum', None)
             if not itemId:
                 continue 
-                
-            queryset = models.Inventory.objects.get(id=itemId).delete()
+            if isinstance(itemId, int):
+                queryset = models.Inventory.objects.get(id=itemId)
+
+            else:
+                queryset = models.Inventory.objects.get(partnum=itemId)
             
         except models.Inventory.DoesNotExist:
             bad_data.append(item)
             continue 
 
         serializer = serializers.InventorySerializer(queryset, data=item, partial=True)
-        
-        updated_data.append(serializer.data)        
+        if (serializer.is_valid()):
+            updated_data.append(serializer.data)        
         queryset.delete()
     if bad_data:
         return Response({"deleted data": updated_data, 'bad data': bad_data}, HTTP_400_BAD_REQUEST)

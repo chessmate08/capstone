@@ -17,13 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.views.generic import TemplateView
 from django.urls import path, include, re_path
-
-
-
+from django.shortcuts import render
+from django.conf import settings
+def index(request):
+    return render(request, 'index.html', {
+        'API_URL': settings.REACT_API_URL 
+    })
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('bneApp.urls')),
 
     # react urls down here
-    re_path(r"^.*$", TemplateView.as_view(template_name='index.html'))
+    re_path(r"^.*$", index)
 ]
